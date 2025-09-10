@@ -666,11 +666,10 @@ metadata:
   labels:
     app: loadgenerator
 spec:
-  replicas: 2
   selector:
     matchLabels:
       app: loadgenerator
-  replicas: 1
+  replicas: 2
   template:
     metadata:
       labels:
