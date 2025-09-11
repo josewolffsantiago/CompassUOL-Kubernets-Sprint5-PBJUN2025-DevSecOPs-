@@ -64,8 +64,8 @@ Desenvolvedor → git push no repositório GitHub → ArgoCD detecta a mudança 
 
 Esta seção descreve as etapas para implantar a aplicação Online Boutique utilizando o fluxo de GitOps.
 
-> **Nota:**
-> Esta documentação não inclui tutorial de completo de instalação de todos os componentes. No item [Tecnologias Utilizadas](### 1.1. Tecnologias Utilizadas:). Estamos partindo do pressuposto que já é usuário do GitHub e possui o comando git instalado e logado no seu sistema operacional.
+>[!NOTE]
+>Esta documentação não inclui tutorial de completo de instalação de todos os componentes. No item [Tecnologias Utilizadas](https://github.com/josewolffsantiago/CompassUOL-Kubernets-Sprint5-PBJUN2025-DevSecOPs-?tab=readme-ov-file#11-tecnologias-utilizadas) tem todos os links para a instalação e configuração correta de cada componente para a Execução deste projeto.
 
 
 ### 3.1. Preparação do Repositório Git
@@ -97,3 +97,51 @@ Verificação: Aguarde alguns minutos e verifique se os pods do ArgoCD estão em
 
 
             kubectl get pods -n argocd
+
+### 3.3. Acesso à Interface Web do ArgoCD
+
+Para acessar a interface do ArgoCD, que por padrão não é exposta externamente, execute o comando:
+
+            kubectl port-forward svc/argocd-server -n argocd 8080:443
+
+Obter a Senha Inicial: A senha inicial do usuário admin é gerada automaticamente e armazenada em um Secret. Para obtê-la, execute:
+
+            kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+
+Login: Acesse https://localhost:8080 em seu navegador. Use admin como usuário e a senha obtida no passo anterior.
+
+### 3.4. Criação da aplicação no ArgoCD
+
+Voltando ao terminal, vamos criar um novo namespace no Kubernet utilizando o kubectl. O namespace é importante para organizarmos os aplicativos e também para especificarmos os comandos kubectl diretamente para o aplicativo que será necessário alguma alteração.
+
+            kubectl create namespace online-boutique
+
+Logo após, colocamos um comando para o argocd criar diretamente o nosso aplicativo e poder fazer o gerenciamento do mesmo.
+
+            argocd app create online-boutique     --repo [Aqui você vai colocar o link do seu repositório .git]     --path gitops-microservices/k8s/     --dest-server https://kubernetes.default.svc     --dest-namespace online-boutique
+
+O item dest-server está apontando para a criação no cluster local.
+
+### 3.5. Sincronização e Acesso à Aplicação
+
+Após a criação, o ArgoCD precisa iniciar o processo de sincronização (Sync), pois o default dele é não sincronicar automaticamente.
+
+Coloque no terminal este comando:
+
+            argocd app sync online-boutique
+
+Ao acessar o https://localhost:8080, veja que o aplicativo já vai aparecer e aguarde que o status da aplicação mude para Healthy e Synced.
+
+Verifique se todos os pods dos microserviços estão rodando:h
+
+            kubectl get pods -n default
+
+O serviço do frontend é do tipo ClusterIP. Para acessá-lo externamente, faça um port-forward:
+Bash
+
+            kubectl port-forward -n online-boutique svc/frontend-external 8081:80
+
+Abra seu navegador e acesse http://localhost:8081 para ver a loja Online Boutique funcionando.
+
+
+
