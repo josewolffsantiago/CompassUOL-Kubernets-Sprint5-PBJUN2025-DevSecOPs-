@@ -109,6 +109,13 @@ E coloque o arquivo [online-boutique.yaml](/gitops-microservices/k8s/online-bout
 
 Dê o commit corretamente e salve o link do seu repositório para ser usado à frente.
 
+Exemplo de como ficará a pasta local antes de dar o primeiro "commit" no github.
+
+![Manifesto YAML no local](/imgs/Pasta%20localização%20-%20Manifesto%20yaml.png)
+
+>[!IMPORTANT] 
+>Veja que o meu "git init" foi realizado dentro da pasta "Kubernetes - ArgoCD"
+
 ### 3.2. Instalação do ArgoCD no Cluster
 
 No terminal, crie um namespace para a instalação do ArgoCD
