@@ -2,9 +2,33 @@
 
 Projeto: GitOps na prática
 
-Versão: 1.0
+Versão: 1.1
 
-Data: 09 de Setembro de 2025
+Data: 11 de Setembro de 2025
+
+
+## Sumário
+
+1. [Visão Geral](#1-visão-geral)
+   - [1.1. Tecnologias Utilizadas](#11-tecnologias-utilizadas)
+2. [Arquitetura da Solução](#2-arquitetura-da-solução-versão-corrigida)
+   - [2.1. Repositório Git (GitHub)](#21-repositório-git-github)
+   - [2.2. ArgoCD (Ferramenta de GitOps)](#22-argocd-ferramenta-de-gitops)
+   - [2.3. Cluster Kubernetes (Rancher Desktop)](#23-cluster-kubernetes-rancher-desktop)
+   - [Fluxo de Trabalho](#fluxo-de-trabalho)
+3. [Guia de Execução Passo a Passo](#3-guia-de-execução-passo-a-passo)
+   - [3.1. Preparação do Repositório Git](#31-preparação-do-repositório-git)
+   - [3.2. Instalação do ArgoCD no Cluster](#32-instalação-do-argocd-no-cluster)
+   - [3.3. Acesso à Interface Web do ArgoCD](#33-acesso-à-interface-web-do-argocd)
+   - [3.4. Criação da Aplicação no ArgoCD](#34-criação-da-aplicação-no-argocd)
+   - [3.5. Sincronização e Acesso à Aplicação](#35-sincronização-e-acesso-à-aplicação)
+4. [Implementação do MetalLB](#4-implantação-do-metallb)
+   - [4.1. Instalação do MetalLB](#41-instalação-do-metallb)
+   - [4.2. Configuração do MetalLB](#42-configuração-do-metallb)
+   - [4.3. Resultado](#43-resultado)
+5. [Referências](#5-referências)
+
+
 
 ------------------
 
@@ -20,7 +44,7 @@ A solução demonstra um fluxo de trabalho moderno utilizada no mercado, onde as
 
 [Rancher-Desktop](https://rancherdesktop.io/): Containerização e orquestração dos serviços.
 
-[Kubernet](https://kubernetes.io/releases/download/): Plataforma de orquestração de containers, responsável por gerenciar o ciclo de vida da aplicação de microserviços.
+[Kubernetes](https://kubernetes.io/releases/download/): Plataforma de orquestração de containers, responsável por gerenciar o ciclo de vida da aplicação de microserviços.
 
 [ArgoCD](https://github.com/badtuxx/DescomplicandoArgoCD/blob/main/pt/src/day-1/README.md#instalando-o-argocd): O link do ArgoCD irá encaminhar para o repositório do [badtuxx](https://github.com/badtuxx/). Siga as instruções de instalação dele. O ArgoCD é uma ferramenta de GitOps para Kubernetes, utilizada para automatizar o deploy e a sincronização da aplicação a partir do repositório Git.
 
@@ -59,6 +83,8 @@ A arquitetura se baseia em serviços do em um fluxo de trabalho GitOps que conec
 
 #### Fluxo de Trabalho:
 Desenvolvedor → git push no repositório GitHub → ArgoCD detecta a mudança → ArgoCD aplica o manifesto no Cluster Kubernetes → Aplicação é atualizada.
+
+------------------
 
 ## 3. Guia de Execução Passo a Passo
 
@@ -112,7 +138,7 @@ Login: Acesse https://localhost:8080 em seu navegador. Use admin como usuário e
 
 ### 3.4. Criação da aplicação no ArgoCD
 
-Voltando ao terminal, vamos criar um novo namespace no Kubernet utilizando o kubectl. O namespace é importante para organizarmos os aplicativos e também para especificarmos os comandos kubectl diretamente para o aplicativo que será necessário alguma alteração.
+Voltando ao terminal, vamos criar um novo namespace no Kubernetes utilizando o kubectl. O namespace é importante para organizarmos os aplicativos e também para especificarmos os comandos kubectl diretamente para o aplicativo que será necessário alguma alteração.
 
             kubectl create namespace online-boutique
 
@@ -142,6 +168,55 @@ Bash
             kubectl port-forward -n online-boutique svc/frontend-external 8081:80
 
 Abra seu navegador e acesse http://localhost:8081 para ver a loja Online Boutique funcionando.
+
+------------------
+
+## 4. Implementação do MetalLB
+
+O [MetalLB](https://metallb.io/) é um controlador de load balancer para clusters Kubernetes em ambientes bare-metal ou locais. Ele permite que serviços do tipo LoadBalancer recebam IPs externos roteáveis, tornando possível acessar aplicações do cluster como se estivessem em provedores cloud, onde o balanceamento acontece automaticamente.
+
+Ele monitora serviços do tipo LoadBalancer e atribui um IP externo definido pelo usuário (por exemplo, faixa de IPs da rede local)
+
+![ArgoCD - Progressing](/imgs/ArgoCD%20-%20FrontEnd%20External%20-%20Progressing.png)
+
+### 4.1. Instalação do MetalLB
+
+Para fazer a instalação do MetalLB, é só seguir o manifesto abaixo. O link irá fazer a instalação sempre da ultima versão. Coloque no terminal:
+
+            kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.15.2/config/manifests/metallb-native.yaml
+
+### 4.2. Configuração do MetalLB
+
+Faça o download destes dois arquivos que já estão prontos:
+
+[ippoladress.yaml](/ippooladdress.yaml)
+
+[l2adv.yaml](/l2adv.yaml)
+
+Ambos estes arquivos estão na págida de configuração da [documentação do MetalLB](https://metallb.io/configuration/). Ele insere um IP diretamente no ClusterIP para que o POD FrontEnd External mude o status de "Progressing" para "Healthy". Isto acontece por causa da falta do IP Externo de um LoadBalancer em Soluções Cloud.
+
+Ao baixar os dois arquivos, abra o terminal na localidade que estão salvos e aplique ambos usando o kubectl
+
+            kubectl apply -f ippooladdress.yaml 
+
+
+            kubectl apply -f l2adv.yaml 
+
+### 4.3. Resultado
+
+Após a adição do dois manifestos, ao acessar o ArgoCD no https://localhost:8080. Verá que a aplicação irá aparecer como "Healthy", conforme imagem abaixo:
+
+![Arcd - Healthy](/imgs/ArgoCD%20-%20FrontEnd%20External%20-%20Healthy.png)
+
+------------------
+
+## 5. Referências
+
+[Descomplicando o ArgoCD e o GitOps! Com livro grátis e desafio prático!](https://www.youtube.com/watch?v=TDvA2vAQCF8&t)
+
+[Documentação do Kubectl run](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_run/)
+
+[Passo a Passo: Configurando MetalLB para Load Balancing em Kubernetes](https://medium.com/@luan.ads359/passo-a-passo-configurando-metallb-para-load-balancing-em-kubernetes-40213a341282)
 
 
 
